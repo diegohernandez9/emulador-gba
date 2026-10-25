@@ -7,8 +7,7 @@
     "postinstall": "node scripts/copy-core.mjs",
     "dev": "node scripts/copy-core.mjs && vite",
     "build": "node scripts/copy-core.mjs && tsc --noEmit && vite build",
-    "preview": "vite preview",
-    "deploy": "npm run build && node scripts/deploy-gh-pages.mjs"
+    "preview": "vite preview"
   },
   "dependencies": {
     "@thenick775/mgba-wasm": "^2.6.0"

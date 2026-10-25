@@ -42,14 +42,12 @@ npm run preview   # sirve dist/ con las cabeceras correctas
 
 **https://diegohernandez9.github.io/emulador-gba/**
 
-Para volver a publicar después de cualquier cambio:
+Se publica solo: cada `git push` a `main` dispara el workflow
+[`.github/workflows/deploy.yml`](.github/workflows/deploy.yml), que construye el sitio y
+lo despliega. Tarda un par de minutos.
 
-```bash
-npm run deploy
-```
-
-Construye y empuja `dist/` a la rama `gh-pages`. GitHub Pages tarda un minuto en
-refrescar.
+También puedes lanzarlo a mano desde la pestaña **Actions** del repositorio, con *Run
+workflow*.
 
 ### La primera carga es distinta
 
