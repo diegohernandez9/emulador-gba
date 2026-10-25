@@ -1,0 +1,14 @@
+node_modules/
+dist/
+dev-dist/
+.DS_Store
+*.log
+
+# Se regeneran con scripts/copy-core.mjs en cada install y build.
+public/core/mgba.js
+public/core/mgba.wasm
+
+# Las ROMs son tuyas, no del repositorio.
+*.gba
+*.gbc
+*.sav

@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <!-- viewport-fit=cover deja que la app ocupe bajo la Dynamic Island; el CSS
+         recupera el area segura con env(safe-area-inset-*). -->
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#0b0d12" />
+    <meta name="description" content="Emulador de Game Boy Advance instalable, funciona sin conexion" />
+
+    <!-- Modo app al anadirla a la pantalla de inicio en iOS -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="GBA" />
+    <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+    <link rel="icon" href="/icons/icon-192.png" />
+
+    <title>Emulador GBA</title>
+  </head>
+  <body>
+    <div id="app" aria-live="polite"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

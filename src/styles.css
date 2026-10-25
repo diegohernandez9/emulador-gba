@@ -1,0 +1,629 @@
+:root {
+  --bg: #0b0d12;
+  --surface: #151925;
+  --surface-2: #1e2433;
+  --border: #2b3346;
+  --text: #e8ecf5;
+  --muted: #8f9ab4;
+  --accent: #6ea8ff;
+  --accent-ink: #06122b;
+  --danger: #ff6b6b;
+  --ok: #4ade80;
+  --radius: 14px;
+
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+}
+
+* {
+  box-sizing: border-box;
+  /* Safari muestra un flash gris al tocar cualquier elemento. */
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--text);
+  font: 15px/1.45 -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+  /* Sin esto iOS hace zoom por doble toque y abre la lupa al mantener pulsado. */
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  overscroll-behavior: none;
+}
+
+#app {
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  border-radius: 10px;
+  padding: 10px 14px;
+  transition: background 120ms ease, border-color 120ms ease, opacity 120ms ease;
+}
+
+button:active {
+  background: var(--border);
+}
+
+button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+
+button.ghost {
+  background: transparent;
+}
+
+button.danger {
+  color: var(--danger);
+  border-color: color-mix(in srgb, var(--danger) 45%, transparent);
+}
+
+/* ---------- Vistas ---------- */
+
+.view {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.view[hidden] {
+  display: none;
+}
+
+/* ---------- Biblioteca ---------- */
+
+.library {
+  padding: calc(var(--safe-top) + 16px) calc(var(--safe-right) + 16px)
+    calc(var(--safe-bottom) + 16px) calc(var(--safe-left) + 16px);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  gap: 16px;
+}
+
+.library-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.library-header h1 {
+  margin: 0;
+  font-size: 22px;
+  letter-spacing: -0.02em;
+}
+
+.library-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.rom-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  /* En el ancho de un telefono una sola columna: con dos, los tres botones de
+     cada tarjeta no caben y se salen del borde. */
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+}
+
+.rom-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.rom-name {
+  font-weight: 600;
+  font-size: 14px;
+  /* Los nombres de ROM son largos y no tienen espacios donde cortar. */
+  overflow-wrap: anywhere;
+}
+
+.rom-meta {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.rom-card-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: auto;
+}
+
+.rom-card-actions button {
+  flex: 1;
+  padding: 8px 10px;
+  font-size: 13px;
+}
+
+.empty-state {
+  text-align: center;
+  color: var(--muted);
+  padding: 48px 16px;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+}
+
+.empty-state strong {
+  display: block;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+
+/* ---------- Jugador ---------- */
+
+.player {
+  position: relative;
+  background: #000;
+}
+
+.screen-wrap {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-top: var(--safe-top);
+}
+
+#screen {
+  display: block;
+  background: #000;
+  /* El GBA es pixel art: cualquier suavizado lo emborrona. */
+  image-rendering: pixelated;
+  touch-action: none;
+}
+
+.hud {
+  position: absolute;
+  top: calc(var(--safe-top) + 8px);
+  left: calc(var(--safe-left) + 10px);
+  right: calc(var(--safe-right) + 10px);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.hud button {
+  pointer-events: auto;
+  padding: 7px 11px;
+  font-size: 13px;
+  background: rgba(21, 25, 37, 0.82);
+  backdrop-filter: blur(10px);
+}
+
+.hud-quick {
+  display: flex;
+  gap: 8px;
+}
+
+/* ---------- Controles tactiles ---------- */
+
+.touch-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  touch-action: none;
+  --touch-opacity: 0.55;
+}
+
+.touch-overlay.is-hidden {
+  display: none;
+}
+
+.touch-control {
+  position: absolute;
+  translate: -50% -50%;
+  display: grid;
+  place-items: center;
+  font-size: clamp(11px, 2.6vmin, 17px);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--text);
+  background: rgba(40, 48, 68, var(--touch-opacity));
+  border: 1px solid rgba(160, 180, 220, 0.22);
+  border-radius: 50%;
+  opacity: 0.96;
+  transition: background 60ms ease, scale 60ms ease;
+}
+
+.touch-control.is-active {
+  background: rgba(110, 168, 255, calc(var(--touch-opacity) + 0.3));
+  scale: 0.94;
+}
+
+.touch-start,
+.touch-select {
+  border-radius: 999px;
+  height: 4.2vmin !important;
+  font-size: clamp(9px, 1.9vmin, 13px);
+}
+
+/* El d-pad es una cruz: el circulo base queda transparente y se dibujan los brazos. */
+.touch-dpad {
+  background: none;
+  border: none;
+}
+
+.dpad-arm {
+  position: absolute;
+  background: rgba(40, 48, 68, var(--touch-opacity));
+  border: 1px solid rgba(160, 180, 220, 0.22);
+  border-radius: 8px;
+}
+
+.dpad-v {
+  width: 34%;
+  height: 100%;
+}
+
+.dpad-h {
+  width: 100%;
+  height: 34%;
+}
+
+/* Realimentacion direccional: en iOS no hay vibracion, el aviso debe ser visual. */
+.touch-dpad::after {
+  content: '';
+  position: absolute;
+  width: 32%;
+  height: 32%;
+  border-radius: 6px;
+  background: rgba(110, 168, 255, 0);
+  transition: background 60ms ease, translate 60ms ease;
+}
+
+.touch-dpad.is-up::after { background: rgba(110, 168, 255, 0.75); translate: 0 -100%; }
+.touch-dpad.is-down::after { background: rgba(110, 168, 255, 0.75); translate: 0 100%; }
+.touch-dpad.is-left::after { background: rgba(110, 168, 255, 0.75); translate: -100% 0; }
+.touch-dpad.is-right::after { background: rgba(110, 168, 255, 0.75); translate: 100% 0; }
+.touch-dpad.is-up.is-left::after { translate: -100% -100%; }
+.touch-dpad.is-up.is-right::after { translate: 100% -100%; }
+.touch-dpad.is-down.is-left::after { translate: -100% 100%; }
+.touch-dpad.is-down.is-right::after { translate: 100% 100%; }
+
+/* ---------- Editor de posicion de controles ---------- */
+
+.touch-overlay.is-editing .touch-control {
+  outline: 2px dashed var(--accent);
+  outline-offset: 3px;
+}
+
+.touch-overlay.is-editing .touch-control.is-selected {
+  outline-style: solid;
+  background: rgba(110, 168, 255, 0.45);
+}
+
+.edit-bar {
+  position: absolute;
+  left: calc(var(--safe-left) + 12px);
+  right: calc(var(--safe-right) + 12px);
+  bottom: calc(var(--safe-bottom) + 12px);
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  background: rgba(21, 25, 37, 0.94);
+  backdrop-filter: blur(14px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.edit-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.edit-bar-row label {
+  min-width: 64px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.edit-bar input[type='range'] {
+  flex: 1;
+  accent-color: var(--accent);
+}
+
+.edit-hint {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* ---------- Paneles ---------- */
+
+.sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  background: rgba(4, 6, 10, 0.6);
+  backdrop-filter: blur(3px);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.sheet {
+  width: min(560px, 100%);
+  max-height: 88dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-bottom: none;
+  border-radius: var(--radius) var(--radius) 0 0;
+  padding-bottom: var(--safe-bottom);
+  animation: sheet-in 220ms cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+
+@keyframes sheet-in {
+  from {
+    translate: 0 16px;
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sheet {
+    animation: none;
+  }
+}
+
+.sheet-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.sheet-header h2 {
+  margin: 0;
+  font-size: 17px;
+}
+
+.sheet-body {
+  padding: 16px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.field {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.field > span {
+  font-size: 14px;
+}
+
+.field small {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.field input[type='range'] {
+  width: 150px;
+  accent-color: var(--accent);
+}
+
+.field select,
+.field input[type='number'] {
+  background: var(--surface-2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+
+.switch {
+  position: relative;
+  width: 48px;
+  height: 28px;
+  flex: none;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  padding: 0;
+}
+
+.switch::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--muted);
+  transition: translate 140ms ease, background 140ms ease;
+}
+
+.switch[aria-checked='true'] {
+  background: color-mix(in srgb, var(--accent) 35%, var(--surface-2));
+  border-color: var(--accent);
+}
+
+.switch[aria-checked='true']::after {
+  translate: 20px 0;
+  background: var(--accent);
+}
+
+.section-title {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  margin: 0;
+}
+
+.binding-list {
+  display: grid;
+  gap: 8px;
+}
+
+.binding-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.binding-row > span {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.binding-row button {
+  min-width: 92px;
+  font-size: 13px;
+  padding: 8px 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+.binding-row button.listening {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.slot-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 10px;
+}
+
+.slot {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface-2);
+}
+
+.slot-label {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.slot-state {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.slot-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.slot-actions button {
+  flex: 1;
+  padding: 7px 8px;
+  font-size: 12px;
+}
+
+/* ---------- Avisos ---------- */
+
+.toast-host {
+  position: fixed;
+  left: 50%;
+  translate: -50% 0;
+  bottom: calc(var(--safe-bottom) + 22px);
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+  pointer-events: none;
+}
+
+.toast {
+  padding: 10px 16px;
+  border-radius: 999px;
+  background: rgba(21, 25, 37, 0.95);
+  border: 1px solid var(--border);
+  font-size: 13px;
+  animation: toast-in 180ms ease;
+}
+
+.toast.ok {
+  border-color: color-mix(in srgb, var(--ok) 50%, transparent);
+}
+
+.toast.error {
+  border-color: color-mix(in srgb, var(--danger) 55%, transparent);
+}
+
+@keyframes toast-in {
+  from {
+    translate: 0 8px;
+    opacity: 0;
+  }
+}
+
+.fatal {
+  margin: auto;
+  max-width: 420px;
+  padding: 24px;
+  text-align: center;
+  color: var(--muted);
+}
+
+.fatal h2 {
+  color: var(--text);
+}
+
+.fatal code {
+  display: block;
+  margin-top: 10px;
+  padding: 10px;
+  background: var(--surface);
+  border-radius: 8px;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}

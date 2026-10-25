@@ -1,0 +1,25 @@
+{
+  "name": "emulador-gba",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "postinstall": "node scripts/copy-core.mjs",
+    "dev": "node scripts/copy-core.mjs && vite",
+    "build": "node scripts/copy-core.mjs && tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "deploy": "npm run build && node scripts/deploy-gh-pages.mjs"
+  },
+  "dependencies": {
+    "@thenick775/mgba-wasm": "^2.6.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "vite": "^7.1.12",
+    "vite-plugin-pwa": "^1.0.3",
+    "workbox-core": "^7.4.1",
+    "workbox-precaching": "^7.4.1",
+    "workbox-routing": "^7.4.1",
+    "workbox-window": "^7.4.1"
+  }
+}
