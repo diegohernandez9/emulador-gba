@@ -57,8 +57,13 @@ recarga sola una vez** y ya arranca el emulador. Verás unos segundos de "Prepar
 emulador..." mientras descarga los 2 MB del core; a partir de ahí abre al instante y
 funciona sin conexión.
 
-Si alguna vez aparece un mensaje de error en vez del emulador, el botón *Reintentar*
-rehace ese proceso.
+**Tiene que ser Safari.** En iOS todos los navegadores usan WebKit por debajo, pero
+Brave y Chrome aplican restricciones propias a los service workers, y aquí el service
+worker no es un extra: es lo que aporta las cabeceras de aislamiento. Sin él no arranca.
+
+Si aparece un mensaje de error en vez del emulador, trae debajo una línea de diagnóstico
+(aislamiento, SharedArrayBuffer, service worker, https) que dice en qué punto se rompió.
+El botón *Reintentar* rehace el proceso desde cero.
 
 ### Desplegarlo en otro sitio
 

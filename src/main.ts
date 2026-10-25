@@ -21,7 +21,7 @@ const SW_READY_TIMEOUT_MS = 20_000;
 const root = document.querySelector<HTMLDivElement>('#app');
 if (!root) throw new Error('Falta el contenedor #app');
 
-const fatal = (title: string, detail: string): void => {
+const fatal = (title: string, detail: string, diagnostics?: string): void => {
   const retry = el('button', { type: 'button', class: 'primary', text: 'Reintentar' });
   retry.addEventListener('click', () => {
     try {
@@ -33,35 +33,56 @@ const fatal = (title: string, detail: string): void => {
   });
 
   root.replaceChildren(
-    el('div', { class: 'fatal' }, el('h2', { text: title }), el('p', { text: detail }), retry)
+    el(
+      'div',
+      { class: 'fatal' },
+      el('h2', { text: title }),
+      el('p', { text: detail }),
+      retry,
+      diagnostics ? el('code', { text: diagnostics }) : null
+    )
   );
+};
+
+/** Estado del entorno, para que un fallo se pueda diagnosticar desde una captura. */
+const environmentReport = (): string => {
+  const worker = !('serviceWorker' in navigator)
+    ? 'no soportado'
+    : navigator.serviceWorker.controller
+      ? 'controlando'
+      : 'sin control';
+  return [
+    `aislamiento: ${globalThis.crossOriginIsolated ? 'si' : 'no'}`,
+    `SharedArrayBuffer: ${typeof SharedArrayBuffer === 'undefined' ? 'no' : 'si'}`,
+    `service worker: ${worker}`,
+    `https: ${globalThis.isSecureContext ? 'si' : 'no'}`,
+  ].join('  ·  ');
 };
 
 /**
  * mGBA necesita SharedArrayBuffer, que el navegador solo concede a documentos
- * con COOP/COEP. Si el hosting no manda esas cabeceras las pone el service
- * worker, pero eso exige una recarga para que tome el control del documento.
+ * con COOP/COEP. Donde el hosting no manda esas cabeceras las pone el service
+ * worker, pero eso solo funciona si el navegador las respeta y exige una
+ * recarga para que el worker llegue a controlar el documento.
+ *
+ * Devuelve null si todo esta en orden, o el motivo concreto del fallo.
  */
-const ensureIsolation = async (): Promise<boolean> => {
+const ensureIsolation = async (): Promise<string | null> => {
   if (globalThis.crossOriginIsolated) {
     try {
       sessionStorage.removeItem(ISOLATION_RELOAD_KEY);
     } catch {
       // Nada que limpiar si el almacenamiento esta bloqueado.
     }
-    return true;
+    return null;
   }
-  if (!('serviceWorker' in navigator)) return false;
 
-  // Si no se puede dejar constancia de la recarga, no se recarga: un bucle
-  // infinito es peor que un mensaje de error.
-  let alreadyReloaded: boolean;
-  try {
-    alreadyReloaded = sessionStorage.getItem(ISOLATION_RELOAD_KEY) !== null;
-    if (alreadyReloaded) return false;
-    sessionStorage.setItem(ISOLATION_RELOAD_KEY, '1');
-  } catch {
-    return false;
+  if (!globalThis.isSecureContext) {
+    return 'La pagina no se esta sirviendo por HTTPS, y sin contexto seguro el navegador no concede SharedArrayBuffer.';
+  }
+
+  if (!('serviceWorker' in navigator)) {
+    return 'Este navegador no permite service workers, que es lo que aporta las cabeceras de aislamiento en este hosting. Prueba con Safari.';
   }
 
   // El worker precachea varios megas en la primera visita, pero no se espera
@@ -70,21 +91,40 @@ const ensureIsolation = async (): Promise<boolean> => {
     navigator.serviceWorker.ready.then(() => true),
     new Promise<boolean>((resolve) => setTimeout(() => resolve(false), SW_READY_TIMEOUT_MS)),
   ]);
-  if (!activated) return false;
+  if (!activated) {
+    return 'El service worker no llego a activarse. Revisa la conexion y vuelve a intentarlo.';
+  }
+
+  // Si ya controla el documento y aun asi no hay aislamiento, el navegador esta
+  // descartando las cabeceras que pone el worker: no hay nada que reintentar,
+  // tienen que venir del servidor.
+  if (navigator.serviceWorker.controller) {
+    return 'Este navegador no acepta las cabeceras de aislamiento que anade el service worker. Hace falta un hosting que las mande por HTTP.';
+  }
+
+  // El worker esta activo pero todavia no controla esta pagina: una recarga
+  // basta. Si no se puede registrar que ya se recargo, no se recarga, porque un
+  // bucle infinito es peor que un mensaje de error.
+  try {
+    if (sessionStorage.getItem(ISOLATION_RELOAD_KEY) !== null) {
+      return 'La pagina se recargo y el service worker sigue sin tomar el control.';
+    }
+    sessionStorage.setItem(ISOLATION_RELOAD_KEY, '1');
+  } catch {
+    return 'No se puede usar el almacenamiento de sesion, necesario para completar el arranque. Desactiva la navegacion privada.';
+  }
 
   location.reload();
   // La recarga corta la ejecucion; el valor solo satisface al compilador.
-  return false;
+  return null;
 };
 
 const main = async (): Promise<void> => {
   registerSW({ immediate: true });
 
-  if (!(await ensureIsolation())) {
-    fatal(
-      'El navegador no puede ejecutar el emulador',
-      'La pagina necesita aislamiento de origen cruzado (COOP/COEP) para usar SharedArrayBuffer. Sirvela por HTTPS con esas cabeceras, o espera a que el service worker quede activo y vuelve a abrirla.'
-    );
+  const isolationFailure = await ensureIsolation();
+  if (isolationFailure) {
+    fatal('El navegador no puede ejecutar el emulador', isolationFailure, environmentReport());
     return;
   }
 
