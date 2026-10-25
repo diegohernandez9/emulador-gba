@@ -38,22 +38,51 @@ npm run build     # comprueba tipos y genera dist/
 npm run preview   # sirve dist/ con las cabeceras correctas
 ```
 
-## Ponerlo en el iPhone
+## Está publicado en
 
-Hace falta **HTTPS**: sin él no hay service worker ni `SharedArrayBuffer`, y por eso no
-sirve abrirlo por la IP local de tu Mac. Despliega `dist/` en cualquier hosting estático
-gratuito que permita cabeceras:
+**https://diegohernandez9.github.io/emulador-gba/**
+
+Para volver a publicar después de cualquier cambio:
+
+```bash
+npm run deploy
+```
+
+Construye y empuja `dist/` a la rama `gh-pages`. GitHub Pages tarda un minuto en
+refrescar.
+
+### La primera carga es distinta
+
+GitHub Pages no deja configurar cabeceras HTTP, así que el aislamiento de origen cruzado
+lo inyecta el propio service worker. En la primera visita la página se registra, **se
+recarga sola una vez** y ya arranca el emulador. Verás unos segundos de "Preparando el
+emulador..." mientras descarga los 2 MB del core; a partir de ahí abre al instante y
+funciona sin conexión.
+
+Si alguna vez aparece un mensaje de error en vez del emulador, el botón *Reintentar*
+rehace ese proceso.
+
+### Desplegarlo en otro sitio
+
+El proyecto asume la subruta `/emulador-gba/`. Para un hosting que sirva desde la raíz:
+
+```bash
+BASE_PATH=/ npm run build
+```
 
 | Hosting | Configuración de cabeceras |
 | --- | --- |
 | Cloudflare Pages | `public/_headers` (ya incluido) |
 | Netlify | `public/_headers` (ya incluido) |
 | Vercel | `vercel.json` (ya incluido) |
-| GitHub Pages | No permite cabeceras: las inyecta el service worker tras la primera recarga |
+| GitHub Pages | No permite cabeceras: las inyecta el service worker |
 
-Después, en el iPhone:
+## Ponerlo en el iPhone
 
-1. Abre la URL **en Safari** (Chrome en iOS no permite instalar PWAs).
+En el iPhone:
+
+1. Abre **https://diegohernandez9.github.io/emulador-gba/** en **Safari** (Chrome en iOS
+   no permite instalar PWAs). Espera a que cargue el emulador, no solo la página.
 2. Botón Compartir → **Añadir a pantalla de inicio**.
 3. Ábrela desde el icono, no desde Safari: así va a pantalla completa y sin barras.
 4. Entra en Ajustes → *Posición y tamaño* → **Colocar** y arrastra los botones a tu gusto.

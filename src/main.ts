@@ -4,7 +4,7 @@ import './styles.css';
 import { emulator } from './core/emulator';
 import { settings } from './core/settings';
 import { applyKeyboardBindings } from './input/keyboard';
-import { el, toast } from './ui/dom';
+import { clear, el, toast } from './ui/dom';
 import { LayoutEditor } from './ui/layout-editor';
 import { LibraryView } from './ui/library';
 import { currentOrientation, PlayerView } from './ui/player';
@@ -15,18 +15,25 @@ import { createStatesPanel } from './ui/states-panel';
 const ISOLATION_RELOAD_KEY = 'emulador-gba:isolation-reload';
 /** Cada cuanto se vuelca el FS virtual a IndexedDB mientras se juega. */
 const PERSIST_INTERVAL_MS = 30_000;
+/** Limite de espera a que el service worker quede activo en la primera visita. */
+const SW_READY_TIMEOUT_MS = 20_000;
 
 const root = document.querySelector<HTMLDivElement>('#app');
 if (!root) throw new Error('Falta el contenedor #app');
 
 const fatal = (title: string, detail: string): void => {
+  const retry = el('button', { type: 'button', class: 'primary', text: 'Reintentar' });
+  retry.addEventListener('click', () => {
+    try {
+      sessionStorage.removeItem(ISOLATION_RELOAD_KEY);
+    } catch {
+      // Sin sessionStorage la recarga simplemente vuelve a intentarlo todo.
+    }
+    location.reload();
+  });
+
   root.replaceChildren(
-    el(
-      'div',
-      { class: 'fatal' },
-      el('h2', { text: title }),
-      el('p', { text: detail }),
-    )
+    el('div', { class: 'fatal' }, el('h2', { text: title }), el('p', { text: detail }), retry)
   );
 };
 
@@ -37,14 +44,34 @@ const fatal = (title: string, detail: string): void => {
  */
 const ensureIsolation = async (): Promise<boolean> => {
   if (globalThis.crossOriginIsolated) {
-    sessionStorage.removeItem(ISOLATION_RELOAD_KEY);
+    try {
+      sessionStorage.removeItem(ISOLATION_RELOAD_KEY);
+    } catch {
+      // Nada que limpiar si el almacenamiento esta bloqueado.
+    }
     return true;
   }
   if (!('serviceWorker' in navigator)) return false;
-  if (sessionStorage.getItem(ISOLATION_RELOAD_KEY)) return false;
 
-  await navigator.serviceWorker.ready;
-  sessionStorage.setItem(ISOLATION_RELOAD_KEY, '1');
+  // Si no se puede dejar constancia de la recarga, no se recarga: un bucle
+  // infinito es peor que un mensaje de error.
+  let alreadyReloaded: boolean;
+  try {
+    alreadyReloaded = sessionStorage.getItem(ISOLATION_RELOAD_KEY) !== null;
+    if (alreadyReloaded) return false;
+    sessionStorage.setItem(ISOLATION_RELOAD_KEY, '1');
+  } catch {
+    return false;
+  }
+
+  // El worker precachea varios megas en la primera visita, pero no se espera
+  // indefinidamente: mejor fallar con un mensaje que dejar la pantalla colgada.
+  const activated = await Promise.race([
+    navigator.serviceWorker.ready.then(() => true),
+    new Promise<boolean>((resolve) => setTimeout(() => resolve(false), SW_READY_TIMEOUT_MS)),
+  ]);
+  if (!activated) return false;
+
   location.reload();
   // La recarga corta la ejecucion; el valor solo satisface al compilador.
   return false;
@@ -99,6 +126,8 @@ const main = async (): Promise<void> => {
     onOpenSettings: openSettings,
   });
 
+  // Retirar la pantalla de arranque que trae el HTML.
+  clear(root);
   root.append(library.element, player.element);
 
   const showLibrary = (): void => {

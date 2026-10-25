@@ -618,6 +618,10 @@ button.danger {
   color: var(--text);
 }
 
+.fatal button {
+  margin-top: 16px;
+}
+
 .fatal code {
   display: block;
   margin-top: 10px;
@@ -626,4 +630,47 @@ button.danger {
   border-radius: 8px;
   font-size: 12px;
   overflow-wrap: anywhere;
+}
+
+/* ---------- Arranque ---------- */
+
+.boot {
+  margin: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 24px;
+  text-align: center;
+  color: var(--muted);
+}
+
+.boot p {
+  margin: 0;
+  color: var(--text);
+}
+
+.boot small {
+  max-width: 280px;
+}
+
+.boot-spinner {
+  width: 28px;
+  height: 28px;
+  border: 3px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: boot-spin 820ms linear infinite;
+}
+
+@keyframes boot-spin {
+  to {
+    rotate: 360deg;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .boot-spinner {
+    animation-duration: 2.4s;
+  }
 }
