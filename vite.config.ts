@@ -1,13 +1,14 @@
 import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
-// GitHub Pages sirve el sitio bajo /<repo>/, no en la raiz. Se puede sobrescribir
-// con BASE_PATH=/ para desplegar en un hosting que si sirva desde la raiz.
-const base = process.env.BASE_PATH ?? '/emulador-gba/';
+// Por defecto se sirve desde la raiz del dominio. Un hosting que publique bajo
+// un subdirectorio necesita BASE_PATH=/subdirectorio/ (GitHub Pages, por ejemplo).
+const base = process.env.BASE_PATH ?? '/';
 
 // mGBA usa threads, por lo que la pagina necesita aislamiento de origen cruzado
-// (SharedArrayBuffer). En dev los mandan estos headers; en produccion van en
-// public/_headers y, como GitHub Pages no permite cabeceras, en el service worker.
+// (SharedArrayBuffer). Las manda el servidor: en dev estos headers, en produccion
+// public/_headers. WebKit descarta las que anade un service worker, asi que un
+// hosting que no permita cabeceras propias no sirve para esta app.
 const crossOriginIsolation = {
   'Cross-Origin-Opener-Policy': 'same-origin',
   'Cross-Origin-Embedder-Policy': 'require-corp',

@@ -12,3 +12,6 @@ public/core/mgba.wasm
 *.gba
 *.gbc
 *.sav
+
+# Local Netlify folder
+.netlify

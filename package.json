@@ -7,12 +7,14 @@
     "postinstall": "node scripts/copy-core.mjs",
     "dev": "node scripts/copy-core.mjs && vite",
     "build": "node scripts/copy-core.mjs && tsc --noEmit && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "deploy": "npm run build && netlify deploy --prod --dir=dist"
   },
   "dependencies": {
     "@thenick775/mgba-wasm": "^2.6.0"
   },
   "devDependencies": {
+    "netlify-cli": "^27.14.2",
     "typescript": "^5.9.3",
     "vite": "^7.1.12",
     "vite-plugin-pwa": "^1.0.3",

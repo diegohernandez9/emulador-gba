@@ -40,55 +40,58 @@ npm run preview   # sirve dist/ con las cabeceras correctas
 
 ## Está publicado en
 
-**https://diegohernandez9.github.io/emulador-gba/**
+**https://emulador-gba-223.netlify.app**
 
-Se publica solo: cada `git push` a `main` dispara el workflow
-[`.github/workflows/deploy.yml`](.github/workflows/deploy.yml), que construye el sitio y
-lo despliega. Tarda un par de minutos.
+Para volver a publicar después de un cambio:
 
-También puedes lanzarlo a mano desde la pestaña **Actions** del repositorio, con *Run
-workflow*.
+```bash
+npm run deploy
+```
 
-### La primera carga es distinta
+## Por qué Netlify y no GitHub Pages
 
-GitHub Pages no deja configurar cabeceras HTTP, así que el aislamiento de origen cruzado
-lo inyecta el propio service worker. En la primera visita la página se registra, **se
-recarga sola una vez** y ya arranca el emulador. Verás unos segundos de "Preparando el
-emulador..." mientras descarga los 2 MB del core; a partir de ahí abre al instante y
-funciona sin conexión.
+El core necesita `SharedArrayBuffer`, que el navegador solo concede a páginas con
+aislamiento de origen cruzado (`COOP: same-origin` + `COEP: require-corp`). GitHub Pages
+no permite configurar cabeceras HTTP, así que se intentó que las inyectara el service
+worker. **En WebKit no funciona**: comprobado en Safari, el worker llega a controlar la
+página, añade las cabeceras y el navegador las descarta igualmente. En Chrome sí
+funciona, pero el objetivo era el iPhone.
 
-**Tiene que ser Safari.** En iOS todos los navegadores usan WebKit por debajo, pero
-Brave y Chrome aplican restricciones propias a los service workers, y aquí el service
-worker no es un extra: es lo que aporta las cabeceras de aislamiento. Sin él no arranca.
+Netlify las manda desde el servidor a través de [`public/_headers`](public/_headers), que
+es el mecanismo estándar y no depende de ningún truco. El service worker sigue
+añadiéndolas por si el sitio se mueve, pero ya no es él quien sostiene el montaje.
 
-Si aparece un mensaje de error en vez del emulador, trae debajo una línea de diagnóstico
-(aislamiento, SharedArrayBuffer, service worker, https) que dice en qué punto se rompió.
-El botón *Reintentar* rehace el proceso desde cero.
+La consecuencia práctica: ya no hay recarga automática en la primera visita.
 
 ### Desplegarlo en otro sitio
 
-El proyecto asume la subruta `/emulador-gba/`. Para un hosting que sirva desde la raíz:
+Cualquier hosting estático sirve **siempre que permita cabeceras propias**:
+
+| Hosting | Configuración | Sirve |
+| --- | --- | --- |
+| Netlify | `public/_headers` + `netlify.toml` | Sí |
+| Cloudflare Pages | `public/_headers` | Sí |
+| Vercel | `vercel.json` | Sí |
+| GitHub Pages | No permite cabeceras | **No, en Safari** |
+
+El build asume la raíz del dominio. Para un hosting que publique en un subdirectorio:
 
 ```bash
-BASE_PATH=/ npm run build
+BASE_PATH=/subdirectorio/ npm run build
 ```
-
-| Hosting | Configuración de cabeceras |
-| --- | --- |
-| Cloudflare Pages | `public/_headers` (ya incluido) |
-| Netlify | `public/_headers` (ya incluido) |
-| Vercel | `vercel.json` (ya incluido) |
-| GitHub Pages | No permite cabeceras: las inyecta el service worker |
 
 ## Ponerlo en el iPhone
 
-En el iPhone:
-
-1. Abre **https://diegohernandez9.github.io/emulador-gba/** en **Safari** (Chrome en iOS
-   no permite instalar PWAs). Espera a que cargue el emulador, no solo la página.
+1. Abre **https://emulador-gba-223.netlify.app** en **Safari**. Chrome y Brave en iOS no
+   permiten instalar PWAs, y Brave además restringe los service workers.
 2. Botón Compartir → **Añadir a pantalla de inicio**.
 3. Ábrela desde el icono, no desde Safari: así va a pantalla completa y sin barras.
-4. Entra en Ajustes → *Posición y tamaño* → **Colocar** y arrastra los botones a tu gusto.
+4. `Añadir ROM` para cargar tus `.gba`.
+5. Ajustes → *Posición y tamaño* → **Colocar**, y arrastra los botones a tu gusto. La
+   disposición se guarda por separado en vertical y en horizontal.
+
+Si aparece un mensaje de error en vez del emulador, trae debajo una línea de diagnóstico
+(aislamiento, SharedArrayBuffer, service worker, https) que dice en qué punto se rompió.
 
 ## Sobre tus partidas
 

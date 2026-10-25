@@ -1,0 +1,9 @@
+# Las cabeceras de aislamiento viven en public/_headers, que Netlify copia a la
+# raiz del sitio al construir. Se dejan en un solo sitio para que no haya dos
+# fuentes de verdad.
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "24"
